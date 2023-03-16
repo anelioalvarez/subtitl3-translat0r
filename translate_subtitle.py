@@ -34,11 +34,11 @@ def read_and_parse_file(file_path: str) -> list[str]:
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             if not line.strip().isdigit():
-                tmp += f'{line}'
+                tmp += line
                 continue
             if tmp:
                 lines.append(tmp.strip())
-            tmp = f'{line}'
+            tmp = line
 
         if tmp:
             lines.append(tmp.strip())
