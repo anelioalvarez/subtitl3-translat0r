@@ -23,7 +23,6 @@ find "$DIR" -type f -name "*.srt" ! -name "*_es.srt" | while read FILENAME; do
     fi
 
     ((PROCESSED_FILES++))
-
 done
 
 echo "Complete process."
