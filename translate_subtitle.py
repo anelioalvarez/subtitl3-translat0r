@@ -25,12 +25,12 @@ def translate_line(line: str) -> str:
 
 
 def translate_file(lines: list[str]) -> list[str]:
-    translated_lines = []
+    translated_lines = map(
+        lambda line: translate_line(line) + '\n',
+        tqdm(lines, unit='line', total=len(lines), leave=True)
+    )
 
-    for line in tqdm(lines, unit='line', total=len(lines), leave=True):
-        translated_lines.append(translate_line(line) + '\n')
-
-    return translated_lines
+    return list(translated_lines)
 
 
 def read_and_parse_file(file_path: str) -> list[str]:
