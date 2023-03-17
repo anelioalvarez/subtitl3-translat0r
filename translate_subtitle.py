@@ -4,10 +4,16 @@ import os
 import sys
 
 
+def validate_line_format(parts: list[str]) -> bool:
+    return len(parts) == 3 and \
+        parts[0].isdigit() and \
+        len(parts[1].split(" --> ")) == 2
+
+
 def translate_line(line: str) -> str:
     parts = line.split("\n", 2)
 
-    if len(parts) < 3:
+    if not validate_line_format(parts):
         print(f'Malformed subtitle in line: {line}')
         return line
 
