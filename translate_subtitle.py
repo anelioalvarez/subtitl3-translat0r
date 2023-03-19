@@ -18,8 +18,11 @@ def translate_line(line: str) -> str:
         return line
 
     text = parts[2]
-    parts[2] = GoogleTranslator(
-        source='en', target='es').translate(text.strip()) or text
+    try:
+        parts[2] = GoogleTranslator(
+            source='en', target='es').translate(text.strip()) or text
+    except:
+        pass
 
     return "\n".join(parts)
 
