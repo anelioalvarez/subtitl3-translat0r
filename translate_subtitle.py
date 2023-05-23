@@ -2,12 +2,15 @@ from deep_translator import GoogleTranslator
 from tqdm import tqdm
 import os
 import sys
+import re
 
 
 def validate_line_format(parts: list[str]) -> bool:
+    timing_pattern = r"^\s*\d{2}:\d{2}:\d{2}\,\d{3}[\s]+-->[\s]+\d{2}:\d{2}:\d{2}\,\d{3}$"
+
     return len(parts) == 3 and \
         parts[0].isdigit() and \
-        len(parts[1].split(" --> ")) == 2
+        bool(re.match(timing_pattern, parts[1]))
 
 
 def translate_line(line: str) -> str:
