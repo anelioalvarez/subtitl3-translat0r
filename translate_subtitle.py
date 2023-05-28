@@ -1,82 +1,72 @@
+from subtitle import Subtitle, SRT_REGEX_PATTERN
 from deep_translator import GoogleTranslator
-from tqdm import tqdm
 import os
 import sys
 import re
 
 
-def validate_line_format(parts: list[str]) -> bool:
-    timing_pattern = r"^\s*\d{2}:\d{2}:\d{2}\,\d{3}[\s]+-->[\s]+\d{2}:\d{2}:\d{2}\,\d{3}$"
+def is_language_supported(source='en', target='es') -> bool:
+    langs_dict = GoogleTranslator().get_supported_languages(as_dict=True)
+    langs = set(langs_dict.keys()).union(set(langs_dict.values()))
 
-    return len(parts) == 3 and \
-        parts[0].isdigit() and \
-        bool(re.match(timing_pattern, parts[1]))
+    return {source, target}.issubset(langs)
 
 
-def translate_line(line: str) -> str:
-    parts = line.split("\n", 2)
+def translate_subtitles(subtitles: list[Subtitle], source='en', target='es') -> list[Subtitle]:
+    all_texts = list(map(lambda subtitle: subtitle.text, subtitles))
 
-    if not validate_line_format(parts):
-        print(f'Malformed subtitle in line: {line}')
-        return line
-
-    text = parts[2]
     try:
-        parts[2] = GoogleTranslator(
-            source='en', target='es').translate(text.strip()) or text
+        translated_texts = GoogleTranslator(
+            source, target).translate_batch(all_texts)
     except:
-        pass
+        print("Error trying to translate the file")
+        sys.exit(1)
 
-    return "\n".join(parts)
+    for i in range(len(subtitles)):
+        subtitles[i].text = translated_texts[i]
 
-
-def translate_file(lines: list[str]) -> list[str]:
-    translated_lines = map(
-        lambda line: translate_line(line) + '\n',
-        tqdm(lines, unit='line', total=len(lines), leave=True)
-    )
-
-    return list(translated_lines)
+    return subtitles
 
 
-def read_and_parse_file(file_path: str) -> list[str]:
-    lines = []
-    tmp = ""
+def read_and_parse_file(filepath: str) -> list[Subtitle]:
+    with open(filepath, 'r', encoding='utf-8') as f:
+        file = f.read()
 
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            if not line.strip().isdigit():
-                tmp += line
-                continue
-            if tmp:
-                lines.append(tmp.strip())
-            tmp = line
+    matches = re.findall(SRT_REGEX_PATTERN, file, re.MULTILINE)
+    subtitles = []
 
-        if tmp:
-            lines.append(tmp.strip())
+    for [line_count, start, end, text] in matches:
+        subtitles.append(Subtitle(line_count, start, end, text))
 
-    return lines
+    return subtitles
 
 
-def write_translated_file(file_path: str, lines: list[str]) -> None:
-    translated_file_path = os.path.splitext(file_path)[0] + '_es.srt'
+def write_translated_file(filepath: str, subtitles: list[Subtitle], target='es') -> None:
+    translated_filepath = os.path.splitext(filepath)[0] + f'_{target}.srt'
 
-    with open(translated_file_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
+    with open(translated_filepath, 'w', encoding='utf-8') as f:
+        f.write('\n\n'.join(map(str, subtitles)))
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(f'Usage: python3 {sys.argv[0]} path/to/file.srt')
+        sys.exit(1)
+
+    filepath = sys.argv[1]
+
+    if not filepath.endswith('.srt') or not os.path.isfile(filepath):
+        print(f'"{filepath}" must be a srt file.')
+        sys.exit(1)
+
+    if not is_language_supported():
+        print('Languages not supported.')
+        sys.exit(1)
+
+    subtitles = read_and_parse_file(filepath)
+    translated_subtitles = translate_subtitles(subtitles)
+    write_translated_file(filepath, translated_subtitles)
 
 
 if __name__ == '__main__':
-
-    if len(sys.argv) < 2:
-        print(f'Usage: python3 {sys.argv[0]} /path/to/file.srt')
-        sys.exit(1)
-
-    file_path = sys.argv[1]
-
-    if not file_path.endswith('.srt'):
-        print(f'{file_path} must be a subtitle file .srt')
-        sys.exit(1)
-
-    lines = read_and_parse_file(file_path)
-    translated_lines = translate_file(lines)
-    write_translated_file(file_path, translated_lines)
+    main()
