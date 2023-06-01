@@ -1,6 +1,3 @@
-SRT_REGEX_PATTERN = r"^\s*([0-9]+)[\n]+(\d+:\d+:\d+,\d+)[^\S\n]+-->[^\S\n]+(\d+:\d+:\d+,\d+)((?:\n(?!\d+:\d+:\d+,\d+\b|\n+\d+$).*)*)"
-
-
 class Subtitle:
 
     def __init__(self, line_count: int, start: str, end: str, text: str):
